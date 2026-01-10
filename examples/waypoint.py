@@ -5,10 +5,11 @@ import rospy
 from colibricf.task import Task
 from colibricf.drone import Waypoint
 
+
 class WaypointMission(Task):
-    '''
+    """
     Example of implementation.
-    '''
+    """
 
     TAKEOFF_ALTITUDE = 1.4
     waypoints = [
@@ -22,8 +23,13 @@ class WaypointMission(Task):
         self.drone.arm()
         rospy.sleep(2)
 
-        self.drone.navigate_wait(x=0, y=0, z=self.TAKEOFF_ALTITUDE, frame_id='body', auto_arm=True)
+        self.drone.navigate_wait(
+            x=0, y=0, z=self.TAKEOFF_ALTITUDE, frame_id="body", auto_arm=True
+        )
+
+        self.servo.high()
 
         self.drone.waypoint_navigate(self.waypoints)
 
-WaypointMission().run()
+
+WaypointMission(gpio=14).run()

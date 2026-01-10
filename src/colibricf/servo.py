@@ -2,7 +2,8 @@ import pigpio
 import rospy
 import time
 
-class Servo():
+
+class Servo:
     def __init__(self, gpio: int):
         self.gpio = gpio
         self.pi = pigpio.pi()
@@ -13,12 +14,12 @@ class Servo():
         self.pi.set_mode(self.gpio, pigpio.OUTPUT)
 
     def pwm_neutral(self, sleep=0.45):
-        '''
+        """
         Set servo to neutral position.
-        '''
+        """
 
         try:
-            rospy.loginfo('Servo: neutral.')
+            rospy.loginfo("Servo: neutral.")
             self.pi.set_servo_pulsewidth(self.gpio, 1000)
             time.sleep(sleep)
         except KeyboardInterrupt:
@@ -26,14 +27,13 @@ class Servo():
         finally:
             self.pi.write(self.gpio, 0)
 
-
     def pwm_high(self, sleep=0.45):
-        '''
+        """
         Set servo to the highest secure pulsewidth.
-        '''
+        """
 
         try:
-            rospy.loginfo('Servo: high.')
+            rospy.loginfo("Servo: high.")
             self.pi.set_servo_pulsewidth(self.gpio, 2000)
             time.sleep(sleep)
         except KeyboardInterrupt:
@@ -42,12 +42,12 @@ class Servo():
             self.pi.write(self.gpio, 0)
 
     def pwm_low(self, sleep=0.45):
-        '''
+        """
         Set servo to the lowest secure pulsewidth.
-        '''
+        """
 
         try:
-            rospy.loginfo('Servo: low.')
+            rospy.loginfo("Servo: low.")
             self.pi.set_servo_pulsewidth(self.gpio, 500)
             time.sleep(sleep)
         except KeyboardInterrupt:
@@ -56,12 +56,12 @@ class Servo():
             self.pi.write(self.gpio, 0)
 
     def set_pulsewidth(self, sleep=0.45, pulsewidth=1500):
-        '''
+        """
         Set servo to any pulsewidth. Not recommended in most cases.
-        '''
+        """
 
         try:
-            rospy.loginfo(f'Servo: pulsewidth: {pulsewidth}.')
+            rospy.loginfo(f"Servo: pulsewidth: {pulsewidth}.")
             self.pi.set_servo_pulsewidth(self.gpio, pulsewidth)
             time.sleep(sleep)
         except KeyboardInterrupt:
@@ -70,11 +70,9 @@ class Servo():
             self.pi.write(self.gpio, 0)
 
     def change_pin(self, gpio: int):
-        '''
+        """
         Change the servo gpio pin.
-        '''
+        """
 
         self.gpio = gpio
         self.pi.set_mode(self.gpio, pigpio.OUTPUT)
-
-
