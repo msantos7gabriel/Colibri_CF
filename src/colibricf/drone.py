@@ -177,6 +177,33 @@ class Drone:
 
             r.sleep()
 
+    def orbit_with_detection(self, radius=0.6, speed=0.1, stop_condition=None) -> bool:
+        '''Make the drone orbit around a point, but stop if an ArUco marker is detected.
+        Returns True if the orbit was interrupted by detection, False if it completed a full circle without detection.
+        '''
+
+        start = self.get_telemetry()
+        start_stamp = rospy.get_rostime()
+        r = rospy.Rate(10)
+
+        
+        while not rospy.is_shutdown():
+            # SE DETECTOU, PARA A ÓRBITA NA HORA
+            if stop_condition() == True:
+                rospy.loginfo("ArUco detectado! Saindo da órbita...")
+                return True # Interrompe a órbita
+
+            elapsed = (rospy.get_rostime() - start_stamp).to_sec()
+            angle = elapsed * speed
+
+            if angle >= 2 * math.pi:
+                return False # Completou a volta sem detectar
+
+            x = start.x + math.sin(angle) * radius
+            y = start.y + (math.cos(angle) - 1) * radius
+            self.set_position(x=x, y=y, z=start.z)
+            r.sleep()
+
     def send_msg(self, msg: str) -> None:
         '''
         Send a message to the drone.
