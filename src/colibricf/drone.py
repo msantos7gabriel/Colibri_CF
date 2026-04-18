@@ -389,7 +389,7 @@ class Drone:
 
     def telemetry_info(self, frame_id='map',pos_info=True, batt_info=False, cma_info=False) -> None:
         '''
-        Format telemetry information into a string.
+        Retrieve telemetry data and print/log the selected telemetry information.
         '''
         telemetry = self.get_telemetry(frame_id=frame_id)
         print('-'*25)
