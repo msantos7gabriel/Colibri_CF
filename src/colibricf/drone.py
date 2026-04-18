@@ -204,16 +204,16 @@ class Drone:
         r = rospy.Rate(10)
 
         while not rospy.is_shutdown():
-            # SE DETECTOU, PARA A ÓRBITA NA HORA
+            # If an object is detected, stop orbiting immediately.
             if stop_condition() == True:
-                rospy.loginfo("Objeto detectado! Saindo da órbita...")
-                return True  # Interrompe a órbita
+                rospy.loginfo("Object detected! Exiting orbit...")
+                return True  # Interrupt the orbit
 
             elapsed = (rospy.get_rostime() - start_stamp).to_sec()
             angle = elapsed * speed
 
             if angle >= 2 * math.pi:
-                return False  # Completou a volta sem detectar
+                return False  # Completed the circle without detection
 
             x = start.x + math.sin(angle) * radius
             y = start.y + (math.cos(angle) - 1) * radius
