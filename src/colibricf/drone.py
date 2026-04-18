@@ -399,7 +399,7 @@ class Drone:
                 f"Connected: {telemetry.connected}, Mode: {telemetry.mode}, Armed: {telemetry.armed}")
         if pos_info:
             rospy.loginfo(
-                f"Position: (x: {telemetry.x:.2f}, y: {telemetry.y:.2f}, z: {telemetry.z:.2f}), ")
+                f"Position: (x: {telemetry.x:.2f}, y: {telemetry.y:.2f}, z: {telemetry.z:.2f})")
         if batt_info:
             rospy.loginfo(f"Battery Voltage: {telemetry.voltage:.2f}")
             rospy.loginfo(f"Battery Cells Voltage: {telemetry.cell_voltage:.2f}")
