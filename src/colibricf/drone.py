@@ -12,6 +12,7 @@ from mavros import mavlink
 from mavros_msgs.srv import CommandBool, SetMode, ParamGet, ParamSet, CommandLong
 from mavros_msgs.msg import State, ParamValue, Mavlink
 
+
 class DroneMode(enum.Enum):
     '''
     Drone flight modes.
@@ -25,22 +26,24 @@ class DroneMode(enum.Enum):
     MISSION = "AUTO.MISSION"
     RTL = "RTL"
 
-class Waypoint():
-    x:float = 0
-    y:float = 0
-    z:float = 0
 
-    def __init__(self, x:float, y:float, z:float):
+class Waypoint():
+    x: float = 0
+    y: float = 0
+    z: float = 0
+
+    def __init__(self, x: float, y: float, z: float):
         self.x = x
         self.y = y
         self.z = z
 
+
 class GlobalWaypoint():
-    lat:float
+    lat: float
     lon: float
     alt: float
 
-    def __init__(self, lat:float, lon:float, alt:float):
+    def __init__(self, lat: float, lon: float, alt: float):
         self.lat = lat
         self.lon = lon
         self.alt = alt
@@ -84,6 +87,20 @@ class Drone:
         while not rospy.is_shutdown():
             telemetry = self.get_telemetry(frame_id='navigate_target')
             if math.sqrt((telemetry.x)**2 + (telemetry.y)**2 + (telemetry.z)**2) < self.tolerance:
+                break
+            rospy.sleep(0.1)
+
+    def set_velocity_wait(self, vx: float = 0.0, vy: float = 0.0, vz: float = 0.0, frame_id: str = 'body') -> None:
+        '''
+        Set velocity with wait for completion.
+        '''
+
+        self.set_velocity(vx=vx, vy=vy, vz=vz, frame_id=frame_id)
+        rospy.loginfo(f'Setting velocity: (vx:{vx}, vy:{vy}, vz:{vz}).')
+
+        while not rospy.is_shutdown():
+            telemetry = self.get_telemetry(frame_id='velocity_target')
+            if math.sqrt((telemetry.vx - vx)**2 + (telemetry.vy - vy)**2 + (telemetry.vz - vz)**2) < self.tolerance:
                 break
             rospy.sleep(0.1)
 
@@ -175,6 +192,32 @@ class Drone:
             y = start.y + math.cos(angle) * RADIUS
             self.set_position(x=x, y=y, z=start.z)
 
+            r.sleep()
+
+    def orbit_with_detection(self, radius=0.6, speed=0.1, stop_condition=None) -> bool:
+        '''Make the drone orbit around a point, but stop if an ArUco marker is detected.
+        Returns True if the orbit was interrupted by detection, False if it completed a full circle without detection.
+        '''
+
+        start = self.get_telemetry()
+        start_stamp = rospy.get_rostime()
+        r = rospy.Rate(10)
+
+        while not rospy.is_shutdown():
+            # If an object is detected, stop orbiting immediately.
+            if stop_condition() == True:
+                rospy.loginfo("Object detected! Exiting orbit...")
+                return True  # Interrupt the orbit
+
+            elapsed = (rospy.get_rostime() - start_stamp).to_sec()
+            angle = elapsed * speed
+
+            if angle >= 2 * math.pi:
+                return False  # Completed the circle without detection
+
+            x = start.x + math.sin(angle) * radius
+            y = start.y + (math.cos(angle) - 1) * radius
+            self.set_position(x=x, y=y, z=start.z)
             r.sleep()
 
     def send_msg(self, msg: str) -> None:
@@ -318,7 +361,8 @@ class Drone:
         '''
 
         for i, wp in enumerate(waypoints):
-            self.navigate_global_wait(lat=wp.lat, lon=wp.lon, z=wp.alt, speed=0.5)
+            self.navigate_global_wait(
+                lat=wp.lat, lon=wp.lon, z=wp.alt, speed=0.5)
             rospy.sleep(0.5)  # Pause at waypoint
 
     def follow(self):
@@ -328,7 +372,8 @@ class Drone:
 
         from .apps.follow import _follow_callback
         rospy.loginfo('Starting follow app.')
-        rospy.Subscriber('main_camera/image_raw_throttled', Image, _follow_callback, queue_size=1)
+        rospy.Subscriber('main_camera/image_raw_throttled',
+                         Image, _follow_callback, queue_size=1)
         rospy.spin()
 
     def gesture_control(self):
@@ -338,8 +383,24 @@ class Drone:
 
         from .apps.gesture_control import _gc_callback
         rospy.loginfo('Starting gesture control app.')
-        rospy.Subscriber('main_camera/image_raw_throttled', Image, _gc_callback, queue_size=1)
+        rospy.Subscriber('main_camera/image_raw_throttled',
+                         Image, _gc_callback, queue_size=1)
         rospy.spin()
 
-
-
+    def telemetry_info(self, frame_id='map',pos_info=True, batt_info=False, cma_info=False) -> None:
+        '''
+        Retrieve telemetry data and print/log the selected telemetry information.
+        '''
+        telemetry = self.get_telemetry(frame_id=frame_id)
+        print('-'*25)
+        rospy.loginfo("Telemetry Information:")
+        if cma_info:
+            rospy.loginfo(
+                f"Connected: {telemetry.connected}, Mode: {telemetry.mode}, Armed: {telemetry.armed}")
+        if pos_info:
+            rospy.loginfo(
+                f"Position: (x: {telemetry.x:.2f}, y: {telemetry.y:.2f}, z: {telemetry.z:.2f})")
+        if batt_info:
+            rospy.loginfo(f"Battery Voltage: {telemetry.voltage:.2f}")
+            rospy.loginfo(f"Battery Cells Voltage: {telemetry.cell_voltage:.2f}")
+        print('-'*25)
