@@ -46,14 +46,15 @@ class Camera():
         self.filemanager.add_metadata(filename)
         rospy.loginfo(f'Image saved: {filename}')
 
-    def publish_image(self, frame, node_name: str) -> None:
+    def publish_image(self, frame, node_name: str, debug: bool = False) -> None:
         '''
         Publish an image to a node.
         '''
 
         image_pub = rospy.Publisher(f'~camera/{node_name}', Image, queue_size=1)
         image_pub.publish(self.bridge.cv2_to_imgmsg(frame, 'bgr8'))
-        rospy.loginfo(f'Publishing to ~camera/{node_name}')
+        if debug == True:
+            rospy.loginfo(f'Publishing to ~camera/{node_name}')
 
     def record(self):
         '''
