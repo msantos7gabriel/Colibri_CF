@@ -90,20 +90,6 @@ class Drone:
                 break
             rospy.sleep(0.1)
 
-    def set_velocity_wait(self, vx: float = 0.0, vy: float = 0.0, vz: float = 0.0, frame_id: str = 'body') -> None:
-        '''
-        Set velocity with wait for completion.
-        '''
-
-        self.set_velocity(vx=vx, vy=vy, vz=vz, frame_id=frame_id)
-        rospy.loginfo(f'Setting velocity: (vx:{vx}, vy:{vy}, vz:{vz}).')
-
-        while not rospy.is_shutdown():
-            telemetry = self.get_telemetry(frame_id='velocity_target')
-            if math.sqrt((telemetry.vx - vx)**2 + (telemetry.vy - vy)**2 + (telemetry.vz - vz)**2) < self.tolerance:
-                break
-            rospy.sleep(0.1)
-
     def navigate_global_wait(self, lat: float, lon: float, z: float = 0.0, yaw: float = float('nan'), speed: float = 0.5, frame_id: str = 'body', auto_arm: bool = True) -> None:
         '''
         Navigate to a global position with wait for completion.
@@ -118,6 +104,35 @@ class Drone:
         while not rospy.is_shutdown():
             telemetry = self.get_telemetry(frame_id='navigate_target')
             if math.sqrt((telemetry.x)**2 + (telemetry.y)**2 + (telemetry.z)**2) < self.tolerance:
+                break
+            rospy.sleep(0.1)
+
+    def navigate_with_aruco(self, x: float = 0, y: float = 0, z: float = 0, speed: float = 1, frame_id: str = 'body', stop_condition=None, aruco=None):
+        inicio = rospy.get_rostime().to_sec()
+        self._navigate(x=x, y=y, z=z, speed=speed, frame_id=frame_id)
+        rate = rospy.Rate(10)  # 10Hz
+
+        while not rospy.is_shutdown():
+            if stop_condition == True:
+                return  # Retorna que detectou
+            else:
+                if rospy.get_rostime().to_sec() - inicio > 5:  # Timeout de 5 segundos
+                    rospy.loginfo('Timeout atingido')
+                    break  # Sai do loop se o tempo limite for atingido
+            rate.sleep()
+        return
+
+    def set_velocity_wait(self, vx: float = 0.0, vy: float = 0.0, vz: float = 0.0, frame_id: str = 'body') -> None:
+        '''
+        Set velocity with wait for completion.
+        '''
+
+        self.set_velocity(vx=vx, vy=vy, vz=vz, frame_id=frame_id)
+        rospy.loginfo(f'Setting velocity: (vx:{vx}, vy:{vy}, vz:{vz}).')
+
+        while not rospy.is_shutdown():
+            telemetry = self.get_telemetry(frame_id='velocity_target')
+            if math.sqrt((telemetry.vx - vx)**2 + (telemetry.vy - vy)**2 + (telemetry.vz - vz)**2) < self.tolerance:
                 break
             rospy.sleep(0.1)
 
@@ -387,7 +402,7 @@ class Drone:
                          Image, _gc_callback, queue_size=1)
         rospy.spin()
 
-    def telemetry_info(self, frame_id='map',pos_info=True, batt_info=False, cma_info=False) -> None:
+    def telemetry_info(self, frame_id='map', pos_info=True, batt_info=False, cma_info=False) -> None:
         '''
         Retrieve telemetry data and print/log the selected telemetry information.
         '''
@@ -402,5 +417,6 @@ class Drone:
                 f"Position: (x: {telemetry.x:.2f}, y: {telemetry.y:.2f}, z: {telemetry.z:.2f})")
         if batt_info:
             rospy.loginfo(f"Battery Voltage: {telemetry.voltage:.2f}")
-            rospy.loginfo(f"Battery Cells Voltage: {telemetry.cell_voltage:.2f}")
+            rospy.loginfo(
+                f"Battery Cells Voltage: {telemetry.cell_voltage:.2f}")
         print('-'*25)
