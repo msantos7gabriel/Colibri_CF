@@ -51,7 +51,7 @@ class GlobalWaypoint():
 
 class Drone:
     def __init__(self, node_name="flight"):
-        rospy.init_node(node_name)
+        rospy.init_node(name=node_name, disable_signals=True)
         rospy.loginfo('Starting services.')
 
         self.tolerance = 0.1
@@ -402,19 +402,23 @@ class Drone:
                          Image, _gc_callback, queue_size=1)
         rospy.spin()
 
-    def telemetry_info(self, frame_id='map', pos_info=True, batt_info=False, cma_info=False) -> None:
+    def telemetry_info(self, frame_id='map', gps=True, pos_info=True, batt_info=False, status_info=False) -> None:
         '''
         Retrieve telemetry data and print/log the selected telemetry information.
         '''
         telemetry = self.get_telemetry(frame_id=frame_id)
         print('-'*25)
         rospy.loginfo("Telemetry Information:")
-        if cma_info:
+        if status_info:
             rospy.loginfo(
                 f"Connected: {telemetry.connected}, Mode: {telemetry.mode}, Armed: {telemetry.armed}")
         if pos_info:
-            rospy.loginfo(
-                f"Position: (x: {telemetry.x:.2f}, y: {telemetry.y:.2f}, z: {telemetry.z:.2f})")
+            if gps:
+                rospy.loginfo(
+                    f"Global Position: \nlat: {telemetry.lat:.6f} \nlon: {telemetry.lon:.6f} \nalt: {telemetry.alt:.2f}")
+            else:
+                rospy.loginfo(
+                    f"Position: (x: {telemetry.x:.2f}, y: {telemetry.y:.2f}, z: {telemetry.z:.2f})")
         if batt_info:
             rospy.loginfo(f"Battery Voltage: {telemetry.voltage:.2f}")
             rospy.loginfo(
